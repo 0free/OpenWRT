@@ -1,0 +1,83 @@
+config defaults
+	option input 'DROP'
+	option output 'ACCEPT'
+	option forward 'DROP'
+	option synflood_protect '1'
+	option drop_invalid '1'
+	option flow_offloading '1'
+	option flow_offloading_hw '1'
+
+config zone 'lan'
+	option name 'lan'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+	list network 'lan'
+
+config zone
+	option name 'vpn'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'DROP'
+	list network 'vpn'
+
+config zone 'wan'
+	option name 'wan'
+	option input 'DROP'
+	option output 'ACCEPT'
+	option forward 'DROP'
+	option masq '1'
+	option mtu_fix '1'
+	list network 'wan'
+
+config forwarding
+	option src 'lan'
+	option dest 'wan'
+
+config forwarding
+	option src 'lan'
+	option dest 'vpn'
+
+config forwarding
+	option src 'vpn'
+	option dest 'wan'
+
+config redirect
+	option dest 'vpn'
+	option target 'DNAT'
+	option name 'WireGuard'
+	option family 'ipv4'
+	list proto 'udp'
+	option src 'wan'
+	option src_dport '1194'
+	option dest_ip '10.10.10.1'
+	option dest_port '1194'
+
+config ipset
+	option name 'block'
+	option family 'ipv4'
+	list match 'ip'
+	option timeout '0'
+    option	loadfile '/etc/luci-uploads/ip-block'
+
+config rule
+	option src 'wan'
+	option dest 'lan'
+	option name 'block-inbound'
+	option family 'ipv4'
+	option ipset 'block'
+	option target 'DROP'
+	option direction 'in'
+	option device 'br-lan'
+	list proto 'all'
+
+config rule
+	option src 'wan'
+	option dest 'lan'
+	option name 'block-outbount'
+	option direction 'out'
+	option device 'br-lan'
+	option family 'ipv4'
+	list proto 'all'
+	option ipset 'block'
+	option target 'DROP'
